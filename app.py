@@ -14,7 +14,7 @@ DB_CONFIG = {
     "host": url.hostname,
     "user": url.username,
     "password": url.password,
-    "database": url.path[1;],
+    "database": url.path[1:],
     "port":url.port
 }
 
