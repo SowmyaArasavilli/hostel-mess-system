@@ -9,7 +9,7 @@ app = Flask(__name__)
 DB_URL="mysql://root:pnjJHUgjhlikgWwmhxviVtbIEWmJjeFr@tramway.proxy.rlwy.net:31475/railway"
 app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
 
-parsed=urlparse(DB_URL)
+url=urlparse(DB_URL)
 DB_CONFIG = {
     "host": url.hostname,
     "user": url.username,
