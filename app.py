@@ -241,7 +241,7 @@ def force_update_db():
         try:
             cur.execute("SHOW COLUMNS FROM users LIKE 'mess_start_date'")
             if not cur.fetchone():
-                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT (CURDATE()) AFTER role")
+                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT NULL AFTER role")
                 print("✓ Added mess_start_date column")
             else:
                 print("✓ Mess start date column already exists")
@@ -251,7 +251,7 @@ def force_update_db():
         try:
             cur.execute("SHOW COLUMNS FROM users LIKE 'is_active'")
             if not cur.fetchone():
-                cur.execute("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE AFTER mess_start_date")
+                cur.execute("ALTER TABLE users ADD COLUMN is_active TINYINT(1) DEFAULT TRUE AFTER mess_start_date")
                 print("✓ Added is_active column")
             else:
                 print("✓ Is active column already exists")
