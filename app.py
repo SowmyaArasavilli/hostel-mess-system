@@ -1,21 +1,16 @@
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 import pymysql
-from urllib.parse import urlparse
 from pymysql.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
 
 app = Flask(__name__)
-DB_URL="mysql://root:BJVdNvpHFWkgKPdagcSUpGxGHbTCmPDk@yamabiko.proxy.rlwy.net:59011/railway"
 app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
 
-url=urlparse(DB_URL)
 DB_CONFIG = {
-    "host": url.hostname,
-    "user": url.username,
-    "password": url.password,
-    "database":url.path[1:],
-    "port":url.port
+    "host": "127.0.0.1",
+    "user": "root",
+    "password": "1234",
 }
 
 
@@ -241,7 +236,7 @@ def force_update_db():
         try:
             cur.execute("SHOW COLUMNS FROM users LIKE 'mess_start_date'")
             if not cur.fetchone():
-                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT NULL AFTER role")
+                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT (CURDATE()) AFTER role")
                 print("✓ Added mess_start_date column")
             else:
                 print("✓ Mess start date column already exists")
@@ -251,7 +246,7 @@ def force_update_db():
         try:
             cur.execute("SHOW COLUMNS FROM users LIKE 'is_active'")
             if not cur.fetchone():
-                cur.execute("ALTER TABLE users ADD COLUMN is_active TINYINT(1) DEFAULT TRUE AFTER mess_start_date")
+                cur.execute("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE AFTER mess_start_date")
                 print("✓ Added is_active column")
             else:
                 print("✓ Is active column already exists")
