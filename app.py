@@ -1,18 +1,21 @@
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 import pymysql
+from urllib.parse import urlparse
 from pymysql.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
 
 app = Flask(__name__)
+DB_URL="mysql://root:pnjJHUgjhlikgWwmhxviVtbIEWmJjeFr@tramway.proxy.rlwy.net:31475/railway"
 app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
 
+parsed=urlparse(DB_URL)
 DB_CONFIG = {
-    "host": "mysql.railway.internal",
-    "user": "root",
-    "password": "BJVdNvpHFWkgKPdagcSUpGxGHbTCmPDk",
-    "database": "railway"
-    "port":3306
+    "host": url.hostname,
+    "user": url.username,
+    "password": url.password,
+    "database": url.path[1;],
+    "port":url.port
 }
 
 
