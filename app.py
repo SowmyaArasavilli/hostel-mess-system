@@ -1,21 +1,16 @@
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 import pymysql
-from urllib.parse import urlparse
 from pymysql.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
 
 app = Flask(__name__)
-DB_URL="mysql://root:pnjJHUgjhlikgWwmhxviVtbIEWmJjeFr@tramway.proxy.rlwy.net:31475/railway"
 app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
 
-url=urlparse(DB_URL)
 DB_CONFIG = {
-    "host": url.hostname,
-    "user": url.username,
-    "password": url.password,
-    "database": url.path[1:],
-    "port":url.port
+    "host": "127.0.0.1",
+    "user": "root",
+    "password": "1234",
 }
 
 
@@ -467,7 +462,7 @@ def members():
             name = (request.form.get("name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
-            mess_start_date = date.today().strftime("%Y-%m-%d")
+            mess_start_date = request.form.get("mess_start_date") or None
             if not name or not email or not password:
                 flash("Name, email and password are required", "error")
             else:
