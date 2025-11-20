@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bill - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <div class="container my-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Monthly Bill</h3>
+        <button class="btn btn-outline-secondary" onclick="window.print()">Print / Save PDF</button>
+      </div>
+      <hr />
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div><strong>Member:</strong> {{ user_name }}</div>
+          <div><strong>Month:</strong> {{ month }}</div>
+        </div>
+        <div class="col-md-6">
+          <div><strong>Meal Rate:</strong> ₹{{ '%.2f'|format(meal_rate) }}</div>
+          <div><strong>Total Meals:</strong> {{ meals_count }}</div>
+          <div><strong>Cost:</strong> ₹{{ '%.2f'|format(cost) }}</div>
+          <div><strong>Paid:</strong> ₹{{ '%.2f'|format(payments_sum) }}</div>
+          <div><strong>Due:</strong> ₹{{ '%.2f'|format(due) }}</div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Payments</div>
+            <div class="card-body p-0">
+              <table class="table mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Ref</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in payments_rows %}
+                  <tr>
+                    <td>{{ p.date }}</td>
+                    <td>₹{{ '%.2f'|format(p.amount) }}</td>
+                    <td>{{ p.method }}</td>
+                    <td>{{ p.reference }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Meals</div>
+            <div class="card-body p-0">
+              <table class="table mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>BF</th>
+                    <th>LU</th>
+                    <th>DI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in meals_rows %}
+                  <tr>
+                    <td>{{ m.date }}</td>
+                    <td>{{ m.breakfast }}</td>
+                    <td>{{ m.lunch }}</td>
+                    <td>{{ m.dinner }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+ </html>
+

@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cancellations - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-recycle me-2"></i>NoWasteMeals</a>
+        <div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') }}">Back</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h3 class="mb-0">Student Meal Cancellations</h3>
+        <form class="d-flex" method="get">
+          <input type="month" class="form-control" name="month" value="{{ month }}">
+          <button class="btn btn-primary ms-2">Filter</button>
+        </form>
+      </div>
+
+      <div class="table-responsive bg-white shadow-sm rounded">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th>Student</th>
+              <th>Cancelled Meals</th>
+              <th>Refund Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in cancellations %}
+              {% set refund = 0 %}
+              {% if c.breakfast == 0 %}
+                {% set refund = refund + weekly_fees[c.weekday].breakfast_fee %}
+              {% endif %}
+              {% if c.lunch == 0 %}
+                {% set refund = refund + weekly_fees[c.weekday].lunch_fee %}
+              {% endif %}
+              {% if c.dinner == 0 %}
+                {% set refund = refund + weekly_fees[c.weekday].dinner_fee %}
+              {% endif %}
+              <tr>
+                <td>{{ c.date }}</td>
+                <td>{{ c.weekday }}</td>
+                <td>{{ c.user_name }}</td>
+                <td>
+                  {% if c.breakfast == 0 %}<span class="badge bg-danger me-1">Breakfast</span>{% endif %}
+                  {% if c.lunch == 0 %}<span class="badge bg-danger me-1">Lunch</span>{% endif %}
+                  {% if c.dinner == 0 %}<span class="badge bg-danger me-1">Dinner</span>{% endif %}
+                </td>
+                <td class="text-success">₹{{ '%.2f'|format(refund) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

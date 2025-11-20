@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>All Monthly Bills - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-recycle me-2"></i>NoWasteMeals</a>
+        <div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') }}">Back</a>
+        </div>
+      </div>
+    </nav>
+    
+    <div class="container py-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h3 class="mb-0"><i class="bi bi-receipt-cutoff me-2"></i>All Monthly Bills</h3>
+        <form class="d-flex" method="get">
+          <input type="month" class="form-control" name="month" value="{{ month }}">
+          <button class="btn btn-primary ms-2">Filter</button>
+        </form>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+              <h4 class="mb-1">{{ summary.total_members or 0 }}</h4>
+              <p class="mb-0">Total Members</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card bg-success text-white">
+            <div class="card-body text-center">
+              <h4 class="mb-1">₹{{ '%.2f'|format(summary.total_billed or 0) }}</h4>
+              <p class="mb-0">Total Billed</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card bg-info text-white">
+            <div class="card-body text-center">
+              <h4 class="mb-1">₹{{ '%.2f'|format(summary.total_paid or 0) }}</h4>
+              <p class="mb-0">Total Paid</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+              <h4 class="mb-1">₹{{ '%.2f'|format(summary.total_due or 0) }}</h4>
+              <p class="mb-0">Total Due</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bills Table -->
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-table me-2"></i>Monthly Bills for {{ month }}</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Student</th>
+                  <th>Email</th>
+                  {% if bills and bills[0] and 'mess_start_date' in bills[0] %}
+                  <th>Mess Start</th>
+                  {% endif %}
+                  <th>Total Meals</th>
+                  <th>Cancelled</th>
+                  <th>Billable</th>
+                  <th>Meal Rate</th>
+                  <th>Total Amount</th>
+                  <th>Paid</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for bill in bills %}
+                <tr>
+                  <td>
+                    <strong>{{ bill.user_name }}</strong>
+                  </td>
+                  <td>{{ bill.email }}</td>
+                  {% if 'mess_start_date' in bill %}
+                  <td>{{ bill.mess_start_date }}</td>
+                  {% endif %}
+                  <td>{{ bill.total_meals }}</td>
+                  <td>
+                    <span class="badge bg-secondary">{{ bill.cancelled_meals }}</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">{{ bill.billable_meals }}</span>
+                  </td>
+                  <td>₹{{ '%.2f'|format(bill.meal_rate) }}</td>
+                  <td>
+                    <strong>₹{{ '%.2f'|format(bill.total_amount) }}</strong>
+                  </td>
+                  <td>
+                    <span class="text-success">₹{{ '%.2f'|format(bill.paid_amount) }}</span>
+                  </td>
+                  <td>
+                    <span class="text-{{ 'success' if bill.due_amount <= 0 else 'warning' }}">
+                      ₹{{ '%.2f'|format(bill.due_amount) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ 'success' if bill.status == 'paid' else 'warning' if bill.status == 'pending' else 'danger' }}">
+                      {{ bill.status|title }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a href="{{ url_for('monthly_bill', user_id=bill.user_id, month=month) }}" 
+                         class="btn btn-outline-primary btn-sm" title="View Bill">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <a href="{{ url_for('payments', month=month) }}" 
+                         class="btn btn-outline-success btn-sm" title="View Payments">
+                        <i class="bi bi-credit-card"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="{{ 12 if bills and bills[0] and 'mess_start_date' in bills[0] else 11 }}" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="mt-2">No bills found for {{ month }}</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Options -->
+      <div class="row mt-4">
+        <div class="col-12 text-center">
+          <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="exportToCSV()">
+              <i class="bi bi-download me-2"></i>Export to CSV
+            </button>
+            <button class="btn btn-outline-success" onclick="window.print()">
+              <i class="bi bi-printer me-2"></i>Print Report
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function exportToCSV() {
+        // Simple CSV export functionality
+        const table = document.querySelector('table');
+        let csv = [];
+        
+        // Get headers
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+          headers.push(th.textContent.trim());
+        });
+        csv.push(headers.join(','));
+        
+        // Get data rows
+        table.querySelectorAll('tbody tr').forEach(row => {
+          const rowData = [];
+          row.querySelectorAll('td').forEach(td => {
+            // Remove HTML tags and get clean text
+            const text = td.textContent.trim().replace(/\s+/g, ' ');
+            rowData.push(`"${text}"`);
+          });
+          csv.push(rowData.join(','));
+        });
+        
+        // Download CSV
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `monthly_bills_${month}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Menu - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-recycle me-2"></i>NoWasteMeals</a>
+        <div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') }}">Back</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h3 class="mb-0">Menu for Central Mess (Breakfast, Lunch, Snacks, Dinner)</h3>
+        <form class="d-flex" method="get">
+          <input type="month" class="form-control" name="month" value="{{ month }}">
+          <button class="btn btn-primary ms-2">Filter</button>
+        </form>
+      </div>
+      
+      <div class="alert alert-info">
+        <h6 class="alert-heading mb-2"><i class="bi bi-info-circle me-2"></i>Central Mess - GIET University, Gunupur, Odisha</h6>
+        <p class="mb-0">This menu shows the weekly fixed food items along with their pricing. Snacks are included in the meal plan.</p>
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Weekly Fixed Menu Display -->
+      <div class="card mb-4">
+        <div class="card-header">Weekly Fixed Menu & Pricing</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Day</th>
+                  <th>Breakfast</th>
+                  <th>Lunch</th>
+                  <th>Snacks</th>
+                  <th>Dinner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] %}
+                  {% if weekly_menu and d in weekly_menu %}
+                    {% set row = weekly_menu[d] %}
+                    <tr>
+                      <td><strong>{{ d }}</strong></td>
+                      <td>
+                        <div class="fw-bold">{{ row.breakfast_menu if row and row.breakfast_menu else 'N/A' }}</div>
+                        {% if row.breakfast_price %}
+                        <small class="text-success">{{ row.breakfast_price }}</small>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="fw-bold">{{ row.lunch_menu if row and row.lunch_menu else 'N/A' }}</div>
+                        {% if row.lunch_price %}
+                        <small class="text-success">{{ row.lunch_price }}</small>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="fw-bold">{{ row.snacks_menu if row and row.snacks_menu else 'N/A' }}</div>
+                        <small class="text-muted">Included</small>
+                      </td>
+                      <td>
+                        <div class="fw-bold">{{ row.dinner_menu if row and row.dinner_menu else 'N/A' }}</div>
+                        {% if row.dinner_price %}
+                        <small class="text-success">{{ row.dinner_price }}</small>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% else %}
+                    <tr>
+                      <td><strong>{{ d }}</strong></td>
+                      <td>N/A</td>
+                      <td>N/A</td>
+                      <td>N/A</td>
+                      <td>N/A</td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <h6>Meal Timings</h6>
+            <ul class="mb-0">
+              <li>Breakfast: {{ timings.breakfast if timings else '6:30 AM to 8:30 AM' }}</li>
+              <li>Lunch: {{ timings.lunch if timings else '12:30 PM to 2:30 PM' }}</li>
+              <li>Tea: {{ timings.tea if timings else '6:00 PM to 7:00 PM' }}</li>
+              <li>Dinner: {{ timings.dinner if timings else '8:00 PM to 9:45 PM' }}</li>
+              <li>Sunday & Holiday - Breakfast: {{ timings.sunday_breakfast if timings else '8:00 AM to 9:30 AM' }}</li>
+              <li>Sunday & Holiday - Lunch: {{ timings.sunday_lunch if timings else '12:30 PM to 2:30 PM' }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {% if user_role == 'admin' %}
+      <div class="card mb-4">
+        <div class="card-header">Set Weekly Menu</div>
+        <div class="card-body">
+          <form method="post" class="row g-3">
+            <input type="hidden" name="form_type" value="weekly" />
+            <div class="col-md-2">
+              <label class="form-label">Week Start Date</label>
+              <input type="date" class="form-control" name="week_start" value="{{ today }}" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Breakfast Menu</label>
+              <input type="text" class="form-control" name="breakfast_menu" placeholder="e.g., Poha, Idli">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Lunch Menu</label>
+              <input type="text" class="form-control" name="lunch_menu" placeholder="e.g., Chicken, Dal Rice">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Snacks</label>
+              <input type="text" class="form-control" name="snacks_menu" placeholder="e.g., Tea & Biscuits">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Dinner Menu</label>
+              <input type="text" class="form-control" name="dinner_menu" placeholder="e.g., Roti Dalma, Biryani">
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">Save Weekly Menu</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">Set Daily Menu</div>
+        <div class="card-body">
+          <form method="post" class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-control" name="date" value="{{ today }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Breakfast</label>
+              <input type="text" class="form-control" name="breakfast_menu" placeholder="e.g., Poha, Idli">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Lunch</label>
+              <input type="text" class="form-control" name="lunch_menu" placeholder="e.g., Chicken, Dal Rice">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Dinner</label>
+              <input type="text" class="form-control" name="dinner_menu" placeholder="e.g., Roti Dalma, Biryani">
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">Save Menu</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="table-responsive bg-white shadow-sm rounded">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Breakfast</th>
+              <th>Lunch</th>
+              <th>Dinner</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in menu_rows %}
+              <tr>
+                <td>{{ m.date }}</td>
+                <td>{{ m.breakfast_menu or 'N/A' }}</td>
+                <td>{{ m.lunch_menu or 'N/A' }}</td>
+                <td>{{ m.dinner_menu or 'N/A' }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-4">
+                  <i class="bi bi-calendar-x display-4 text-muted"></i>
+                  <p class="mt-2">No daily menus found for {{ month }}</p>
+                  <small>Admins can add daily menus using the form above</small>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+ </html>
+

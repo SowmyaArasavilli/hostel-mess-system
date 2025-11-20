@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - NoWasteMeals</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #28a745 !important;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: black;
+            padding: 4rem 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .welcome-banner {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-recycle me-2"></i>NoWasteMeals
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    {% if user_role != 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('meals') }}">
+                            <i class="nav-link" href="{{ url_for('meals') }}">
+                            <i class="bi bi-calendar3 me-1"></i>Meals
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('payments') }}">
+                            <i class="bi bi-wallet2 me-1"></i>Payments
+                        </a>
+                    </li>
+                    {% if user_role != 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('monthly_bill') }}">
+                            <i class="bi bi-receipt me-1"></i>My Bill
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user_role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('members') }}">
+                            <i class="bi bi-people me-1"></i>Members
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('expenses') }}">
+                            <i class="bi bi-cash-coin me-1"></i>Expenses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cancellations') }}">
+                            <i class="bi bi-x-circle me-1"></i>Cancellations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('all_bills') }}">
+                            <i class="bi bi-receipt-cutoff me-1"></i>All Bills
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('update_db') }}">
+                            <i class="bi bi-database-gear me-1"></i>Update DB
+                        </a>
+                    </li>
+                    {% endif %}
+      <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('menu') }}">
+                            <i class="bi bi-card-checklist me-1"></i>Menu
+                        </a>
+      </li>
+    </ul>
+                <ul class="navbar-nav">
+                    {% if user_name %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i>{{ user_name }}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </a>
+                        </li>
+                        
+                    {% endif %}
+                </ul>
+            </div>
+  </div>
+</nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="welcome-banner">
+                        <h1 class="display-4 fw-bold mb-3">
+                            {% if user_name %}
+                                Welcome back, {{ user_name }}!
+                            {% else %}
+                                Welcome to NoWasteMeals
+                            {% endif %}
+                        </h1>
+                        <p class="lead mb-4">Manage your mess meals efficiently and reduce food waste with smart planning and tracking.</p>
+                        {% if not user_name %}
+                            <div class="d-flex gap-3">
+                                <a href="{{ url_for('login') }}" class="btn btn-light btn-lg">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Get Started
+                                </a>
+                                <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">
+                                    <i class="bi bi-person-plus me-2"></i>Sign Up
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <i class="bi bi-recycle display-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        {% if user_name %}
+            <!-- Cards linking to navbar options -->
+            <div class="row mb-5">
+                {% if user_role != 'admin' %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar3 text-primary display-4 mb-3"></i>
+                            <h5 class="card-title">Meals</h5>
+                            <p class="card-text">Cancel tomorrow's meals</p>
+                            <a class="btn btn-primary" href="{{ url_for('meals') }}">Go to Meals</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-wallet2 text-success display-4 mb-3"></i>
+                            <h5 class="card-title">Payments</h5>
+                            <p class="card-text">Add your payments</p>
+                            <a class="btn btn-success" href="{{ url_for('payments') }}">Go to Payments</a>
+                        </div>
+                    </div>
+                </div>
+                {% if user_role != 'admin' %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-receipt text-info display-4 mb-3"></i>
+                            <h5 class="card-title">My Bill</h5>
+                            <p class="card-text">View monthly bill & payments</p>
+                            <a class="btn btn-info" href="{{ url_for('monthly_bill') }}">View Bill</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-card-checklist text-warning display-4 mb-3"></i>
+                            <h5 class="card-title">Menu</h5>
+                            <p class="card-text">View weekly and daily menu</p>
+                            <a class="btn btn-warning" href="{{ url_for('menu') }}">Go to Menu</a>
+                        </div>
+                    </div>
+                </div>
+                {% if user_role == 'admin' %}
+                <div class="col-md-6 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people text-secondary display-4 mb-3"></i>
+                            <h5 class="card-title">Members</h5>
+                            <p class="card-text">Manage members and roles</p>
+                            <a class="btn btn-secondary" href="{{ url_for('members') }}">Go to Members</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cash-coin text-dark display-4 mb-3"></i>
+                            <h5 class="card-title">Expenses</h5>
+                            <p class="card-text">Record mess expenses</p>
+                            <a class="btn btn-dark" href="{{ url_for('expenses') }}">Go to Expenses</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-x-circle text-info display-4 mb-3"></i>
+                            <h5 class="card-title">Cancellations</h5>
+                            <p class="card-text">View student meal cancellations</p>
+                            <a class="btn btn-info" href="{{ url_for('cancellations') }}">Go to Cancellations</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-database-gear text-warning display-4 mb-3"></i>
+                            <h5 class="card-title">Database</h5>
+                            <p class="card-text">Update database schema</p>
+                            <a class="btn btn-warning" href="{{ url_for('update_db') }}">Update DB</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Features for non-logged users -->
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="mb-5">Why Choose NoWasteMeals?</h2>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar-check text-primary display-4 mb-3"></i>
+                            <h5 class="card-title">Smart Meal Planning</h5>
+                            <p class="card-text">Plan your meals efficiently and reduce food waste with intelligent scheduling.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people text-success display-4 mb-3"></i>
+                            <h5 class="card-title">Member Management</h5>
+                            <p class="card-text">Easily manage mess members, track attendance, and handle payments.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-graph-up text-warning display-4 mb-3"></i>
+                            <h5 class="card-title">Analytics & Reports</h5>
+                            <p class="card-text">Get detailed insights into expenses, attendance, and meal patterns.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-recycle me-2"></i>NoWasteMeals</h5>
+                    <p class="mb-0">Efficient mess management for a sustainable future.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2025 NoWasteMeals. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

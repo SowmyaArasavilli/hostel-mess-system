@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meals - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-recycle me-2"></i>NoWasteMeals</a>
+        <div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') }}">Back</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h3 class="mb-0">Meals</h3>
+        <div class="d-flex gap-2">
+          {% if user_role != 'admin' %}
+          <a href="{{ url_for('monthly_bill') }}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-receipt me-1"></i>View My Bill
+          </a>
+          {% endif %}
+          <form class="d-flex" method="get">
+            <input type="month" class="form-control" name="month" value="{{ month }}">
+            <button class="btn btn-primary ms-2">Filter</button>
+          </form>
+        </div>
+      </div>
+
+      {% if all_users %}
+      <div class="alert alert-info">Admin: view meals for all members. Adding meals is not allowed.</div>
+      {% else %}
+      <div class="card mb-4">
+        <div class="card-header">Cancel Tomorrow's Meals</div>
+        <div class="card-body">
+          <p class="text-muted mb-3">By default, all meals are included. Check the boxes below to cancel specific meals.</p>
+          <form method="post" class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Date (Tomorrow)</label>
+              <input type="date" class="form-control" name="date" value="{{ tomorrow }}" readonly>
+            </div>
+            <div class="col-md-9 d-flex align-items-end gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="breakfast" id="bf">
+                <label class="form-check-label" for="bf">Cancel Breakfast</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="lunch" id="lu">
+                <label class="form-check-label" for="lu">Cancel Lunch</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="dinner" id="di">
+                <label class="form-check-label" for="di">Cancel Dinner</label>
+              </div>
+              <button class="btn btn-warning">Update Cancellations</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="table-responsive bg-white shadow-sm rounded">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Member</th>
+              <th>Breakfast</th>
+              <th>Lunch</th>
+              <th>Dinner</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in meals %}
+            <tr>
+              <td>{{ m.date }}</td>
+              <td>{{ m.user_name }}</td>
+              <td><span class="badge bg-{{ 'success' if m.breakfast else 'secondary' }}">{{ 1 if m.breakfast else 0 }}</span></td>
+              <td><span class="badge bg-{{ 'success' if m.lunch else 'secondary' }}">{{ 1 if m.lunch else 0 }}</span></td>
+              <td><span class="badge bg-{{ 'success' if m.dinner else 'secondary' }}">{{ 1 if m.dinner else 0 }}</span></td>
+              <td><strong>{{ (m.breakfast or 0) + (m.lunch or 0) + (m.dinner or 0) }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+ </html>
+

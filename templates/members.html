@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Members - NoWasteMeals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}"><i class="bi bi-recycle me-2"></i>NoWasteMeals</a>
+        <div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('dashboard') }}">Back</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Members</h3>
+        <div class="input-group" style="max-width: 320px;">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input id="search" type="text" class="form-control" placeholder="Search members..." onkeyup="filterTable()" />
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header">Create Member</div>
+        <div class="card-body">
+          <form method="post" class="row g-3">
+            <input type="hidden" name="form_type" value="create" />
+            <div class="col-md-3">
+              <label class="form-label">Name</label>
+              <input class="form-control" name="name" required />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Email</label>
+              <input class="form-control" type="email" name="email" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Password</label>
+              <input class="form-control" type="text" name="password" required />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Mess Start Date</label>
+              <input class="form-control" type="date" name="mess_start_date" value="{{ today }}" />
+              <small class="text-muted">Optional - will use today if not set</small>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button class="btn btn-success">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="table-responsive bg-white shadow-sm rounded">
+        <table id="membersTable" class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              {% if users and users[0] and 'mess_start_date' in users[0] %}
+              <th>Mess Start</th>
+              {% endif %}
+              {% if users and users[0] and 'is_active' in users[0] %}
+              <th>Status</th>
+              {% endif %}
+              <th>Joined</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr class="{{ 'table-danger' if 'is_active' in u and not u.is_active else '' }}">
+              <td>{{ u.id }}</td>
+              <td>
+                <strong>{{ u.name }}</strong>
+                {% if 'is_active' in u and not u.is_active %}
+                  <span class="badge bg-danger ms-2">Removed</span>
+                {% endif %}
+              </td>
+              <td>{{ u.email }}</td>
+              <td><span class="badge bg-{{ 'primary' if u.role=='admin' else 'secondary' }}">{{ u.role }}</span></td>
+              {% if 'mess_start_date' in u %}
+              <td>{{ u.mess_start_date or 'Not set' }}</td>
+              {% endif %}
+              {% if 'is_active' in u %}
+              <td>
+                <span class="badge bg-{{ 'success' if u.is_active else 'danger' }}">
+                  {{ 'Active' if u.is_active else 'Inactive' }}
+                </span>
+              </td>
+              {% endif %}
+              <td>{{ u.created_at }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  {% if u.role != 'admin' and 'mess_start_date' in u %}
+                  <form method="post" class="d-inline">
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <input type="hidden" name="form_type" value="update_mess_date" />
+                    <input type="date" class="form-control form-control-sm d-inline w-auto" name="mess_start_date" 
+                           value="{{ u.mess_start_date or '' }}" style="width: 130px;" />
+                    <button class="btn btn-sm btn-outline-primary ms-1" title="Update Mess Start Date">
+                      <i class="bi bi-calendar"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                  
+                  <form method="post" class="d-inline">
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <input type="hidden" name="form_type" value="update" />
+                    <select class="form-select form-select-sm d-inline w-auto" name="role">
+                      <option value="member" {% if u.role=='member' %}selected{% endif %}>Member</option>
+                      <option value="admin" {% if u.role=='admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                    <button class="btn btn-sm btn-success ms-1" title="Update Role">
+                      <i class="bi bi-save"></i>
+                    </button>
+                  </form>
+                  
+                  {% if u.role != 'admin' %}
+                  <form method="post" class="d-inline ms-1">
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <input type="hidden" name="form_type" value="remove" />
+                    <button type="submit" class="btn btn-sm btn-danger" 
+                            onclick="return confirm('Are you sure you want to remove {{ u.name }}?')"
+                            title="Remove Member">
+                      <i class="bi bi-person-x"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="{{ 8 if users and users[0] and 'mess_start_date' in users[0] and 'is_active' in users[0] else 7 if users and users[0] and ('mess_start_date' in users[0] or 'is_active' in users[0]) else 6 }}" class="text-center text-muted py-4">
+                <i class="bi bi-inbox display-4 text-muted"></i>
+                <p class="mt-2">No members found</p>
+                <small>Create your first member using the form above</small>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      function filterTable(){
+        const q = document.getElementById('search').value.toLowerCase();
+        const rows = document.querySelectorAll('#membersTable tbody tr');
+        rows.forEach(r => {
+          const text = r.innerText.toLowerCase();
+          r.style.display = text.includes(q) ? '' : 'none';
+        });
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+ </html>
+
