@@ -8,9 +8,11 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
 
 DB_CONFIG = {
-    "host": "127.0.0.1",
+    "host": "mysql.railway.internal",
     "user": "root",
-    "password": "1234",
+    "password": "BJVdNvpHFWkgKPdagcSUpGxGHbTCmPDk",
+    "database": "railway"
+    "port":3306
 }
 
 
