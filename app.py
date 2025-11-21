@@ -1382,9 +1382,9 @@ def cancellations():
     )
 
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     # Get port from environment variable (Render provides this), default to 5000 for local
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 3306))
     # Bind to 0.0.0.0 to accept connections from outside (required for Render)
     # Use debug=False in production (Render sets environment appropriately)
     debug = os.environ.get("FLASK_ENV") == "development"
