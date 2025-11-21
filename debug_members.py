@@ -7,10 +7,10 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 DB_CONFIG = {
-    "host": "127.0.0.1",
-    "user": "root",
-    "password": "1234",
-    "database": "mess_management"
+    "host": os.environ.get("MYSQLHOST") or os.environ.get("DB_HOST", "127.0.0.1"),
+    "user": os.environ.get("MYSQLUSER") or os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("DB_PASSWORD", "1234"),
+    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", 3306)),
 }
 
 def debug_members_logic():

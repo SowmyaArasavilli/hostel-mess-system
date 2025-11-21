@@ -29,10 +29,6 @@ def get_connection(database=None):
     config = DB_CONFIG.copy()
     if database:
         config["database"] = database
-    # Add connection timeout settings for Railway
-    config["connect_timeout"] = 60  # 60 seconds timeout
-    config["read_timeout"] = 60
-    config["write_timeout"] = 60
     return pymysql.connect(**config)
 
 
