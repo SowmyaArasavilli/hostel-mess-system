@@ -3,15 +3,42 @@
 Test script to verify database connection and schema
 """
 
+import os
+from urllib.parse import unquote, urlparse
+
 import pymysql
 from pymysql.cursors import DictCursor
 
-DB_CONFIG = {
-    "host": os.environ.get("MYSQLHOST") or os.environ.get("DB_HOST", "127.0.0.1"),
-    "user": os.environ.get("MYSQLUSER") or os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("DB_PASSWORD", "1234"),
-    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", 3306)),
-}
+
+def build_db_config():
+    url = os.getenv("DATABASE_URL")
+    if url:
+        parsed = urlparse(url)
+        database = parsed.path.lstrip("/") or None
+        config = {
+            "host": parsed.hostname,
+            "port": parsed.port or 3306,
+            "user": unquote(parsed.username) if parsed.username else None,
+            "password": unquote(parsed.password) if parsed.password else None,
+            "database": database or os.getenv("DB_NAME", "mess_management"),
+        }
+    else:
+        config = {
+            "host": os.getenv("DB_HOST", "127.0.0.1"),
+            "port": int(os.getenv("DB_PORT", "3306")),
+            "user": os.getenv("DB_USER", "root"),
+            "password": os.getenv("DB_PASSWORD", "1234"),
+            "database": os.getenv("DB_NAME", "mess_management"),
+        }
+
+    ssl_ca = os.getenv("DB_SSL_CA")
+    if ssl_ca:
+        config["ssl"] = {"ca": ssl_ca}
+
+    return {k: v for k, v in config.items() if v is not None}
+
+
+DB_CONFIG = build_db_config()
 
 def test_db():
     try:

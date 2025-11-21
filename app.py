@@ -1,34 +1,56 @@
+import os
+from urllib.parse import unquote, urlparse
+
 from flask import Flask, render_template, redirect, url_for, flash, session, request
 import pymysql
 from pymysql.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
-import os
 
 app = Flask(__name__)
-# Use environment variable for SECRET_KEY, fallback to dev for local development
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev")
-
-# Database configuration - supports Railway, Render, and local development
-# Railway uses MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLPORT, MYSQLDATABASE
-# Render uses DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME
-# Check Railway variables first, then generic, then local defaults
-DB_CONFIG = {
-    "host": os.environ.get("MYSQLHOST") or os.environ.get("DB_HOST", "127.0.0.1"),
-    "user": os.environ.get("MYSQLUSER") or os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("DB_PASSWORD", "1234"),
-    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", 3306)),
-}
-
-# Database name - configurable via environment variable
-# Railway uses MYSQLDATABASE, Render uses DB_NAME
-DB_NAME = os.environ.get("MYSQLDATABASE") or os.environ.get("DB_NAME", "mess_management")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")  # change to strong secret in production
 
 
-def get_connection(database=None):
+def _build_db_config():
+    url = os.getenv("DATABASE_URL")
+    if url:
+        parsed = urlparse(url)
+        database = parsed.path.lstrip("/") or None
+        config = {
+            "host": parsed.hostname,
+            "port": parsed.port or 3306,
+            "user": unquote(parsed.username) if parsed.username else None,
+            "password": unquote(parsed.password) if parsed.password else None,
+        }
+        if database:
+            config["database"] = database
+    else:
+        config = {
+            "host": os.getenv("DB_HOST", "127.0.0.1"),
+            "port": int(os.getenv("DB_PORT", "3306")),
+            "user": os.getenv("DB_USER", "root"),
+            "password": os.getenv("DB_PASSWORD", "1234"),
+        }
+
+    ssl_ca = os.getenv("DB_SSL_CA")
+    if ssl_ca:
+        config["ssl"] = {"ca": ssl_ca}
+
+    return {k: v for k, v in config.items() if v is not None}
+
+
+DB_CONFIG = _build_db_config()
+DEFAULT_DB_NAME = os.getenv("DB_NAME") or DB_CONFIG.get("database") or "mess_management"
+
+
+def get_connection(database=None, use_default=True):
     config = DB_CONFIG.copy()
     if database:
         config["database"] = database
+    elif use_default and DEFAULT_DB_NAME:
+        config["database"] = DEFAULT_DB_NAME
+    else:
+        config.pop("database", None)
     return pymysql.connect(**config)
 
 
@@ -36,17 +58,20 @@ def init_db():
     # Create database and users table if they don't exist
     try:
         # Ensure database exists
-        conn = get_connection()
+        conn = get_connection(use_default=False)
         conn.autocommit(True)
         cur = conn.cursor()
-        cur.execute(
-            f"CREATE DATABASE IF NOT EXISTS {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-        )
+        try:
+            cur.execute(
+                f"CREATE DATABASE IF NOT EXISTS {DEFAULT_DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+        except Exception as create_err:
+            print(f"Database creation skipped/failed: {create_err}")
         cur.close()
         conn.close()
 
         # Ensure users table exists
-        conn = get_connection(DB_NAME)
+        conn = get_connection()
         conn.autocommit(True)
         cur = conn.cursor()
         
@@ -62,7 +87,7 @@ def init_db():
                     email VARCHAR(255) NOT NULL UNIQUE,
                     password_hash VARCHAR(255) NOT NULL,
                     role ENUM('admin','member') NOT NULL DEFAULT 'member',
-                    mess_start_date DATE DEFAULT CURRENT_DATE,
+                    mess_start_date DATE DEFAULT NULL,
                     is_active BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB
@@ -81,7 +106,7 @@ def init_db():
             try:
                 cur.execute("SHOW COLUMNS FROM users LIKE 'mess_start_date'")
                 if not cur.fetchone():
-                    cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT CURRENT_DATE AFTER role")
+                    cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT NULL AFTER role")
                     print("Added mess_start_date column")
             except Exception as e:
                 print(f"Mess start date column check: {e}")
@@ -227,7 +252,7 @@ init_db()
 def force_update_db():
     """Force update database schema for existing installations"""
     try:
-        conn = get_connection(DB_NAME)
+        conn = get_connection()
         conn.autocommit(True)
         cur = conn.cursor()
         
@@ -245,12 +270,19 @@ def force_update_db():
             print(f"✗ Role column error: {e}")
             
         try:
-            cur.execute("SHOW COLUMNS FROM users LIKE 'mess_start_date'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT (CURDATE()) AFTER role")
+            cur.execute("SHOW FULL COLUMNS FROM users LIKE 'mess_start_date'")
+            column_info = cur.fetchone()
+            if not column_info:
+                cur.execute("ALTER TABLE users ADD COLUMN mess_start_date DATE DEFAULT NULL AFTER role")
                 print("✓ Added mess_start_date column")
             else:
-                print("✓ Mess start date column already exists")
+                column_type = (column_info[1] or "").lower()
+                extra = (column_info[6] or "").lower()
+                if column_type != "date" or "on update" in extra:
+                    cur.execute("ALTER TABLE users MODIFY mess_start_date DATE DEFAULT NULL")
+                    print("✓ Normalized mess_start_date column to DATE NULL default")
+                else:
+                    print("✓ Mess start date column already normalized")
         except Exception as e:
             print(f"✗ Mess start date column error: {e}")
             
@@ -391,7 +423,7 @@ def login():
         email = form.email.data.strip().lower()
         password = form.password.data
         try:
-            conn = get_connection("mess_management")
+            conn = get_connection()
             cur = conn.cursor(DictCursor)
             cur.execute(
                 "SELECT id, name, password_hash, role FROM users WHERE email=%s",
@@ -463,7 +495,7 @@ def members():
     if not require_login() or not require_admin():
         return redirect(url_for("login"))
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     # Create user or update role
@@ -473,7 +505,10 @@ def members():
             name = (request.form.get("name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
-            mess_start_date = request.form.get("mess_start_date") or None
+            mess_start_date = request.form.get("mess_start_date")
+            if not mess_start_date:
+                from datetime import date as _date
+                mess_start_date = _date.today().strftime("%Y-%m-%d")
             if not name or not email or not password:
                 flash("Name, email and password are required", "error")
             else:
@@ -579,7 +614,7 @@ def meals():
     if not require_login():
         return redirect(url_for("login"))
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     if request.method == "POST":
@@ -669,7 +704,7 @@ def expenses():
     if not require_login() or not require_admin():
         return redirect(url_for("login"))
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     if request.method == "POST":
@@ -714,7 +749,7 @@ def payments():
     if not require_login():
         return redirect(url_for("login"))
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     if request.method == "POST":
@@ -811,7 +846,7 @@ def monthly_bill():
         from datetime import date as _d
         month = _d.today().strftime("%Y-%m")
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     # Get user details including mess start date
@@ -969,7 +1004,7 @@ def bill():
 
         month = _d.today().strftime("%Y-%m")
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     cur.execute("SELECT name FROM users WHERE id=%s", (user_id,))
@@ -1045,7 +1080,7 @@ def menu():
     if not require_login():
         return redirect(url_for("login"))
 
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
 
     if request.method == "POST":
@@ -1188,7 +1223,7 @@ def all_bills():
         from datetime import date as _d
         month = _d.today().strftime("%Y-%m")
     
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
     
     # First, ensure all active users have monthly bills generated for this month
@@ -1347,7 +1382,7 @@ def cancellations():
         from datetime import date as _d
         month = _d.today().strftime("%Y-%m")
     
-    conn = get_connection("mess_management")
+    conn = get_connection()
     cur = conn.cursor(DictCursor)
     
     # Get cancellations (meals = 0) for the month
@@ -1383,9 +1418,4 @@ def cancellations():
 
 
 if __name__ == "__main__":
-    # Get port from environment variable (Render provides this), default to 5000 for local
-    port = int(os.environ.get("PORT", 5000))
-    # Bind to 0.0.0.0 to accept connections from outside (required for Render)
-    # Use debug=False in production (Render sets environment appropriately)
-    debug = os.environ.get("FLASK_ENV") == "development"
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    app.run(debug=True)
