@@ -3,15 +3,26 @@ import pymysql
 from pymysql.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
+import os
 
-app = Flask(__name__)
-app.config["SECRET_KEY"] = "dev"  # change to a strong secret in production
+app = Flask(_name_)
+# Use environment variable for SECRET_KEY, fallback to dev for local development
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev")
 
+# Database configuration - supports Railway, Render, and local development
+# Railway uses MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLPORT, MYSQLDATABASE
+# Render uses DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME
+# Check Railway variables first, then generic, then local defaults
 DB_CONFIG = {
-    "host": "127.0.0.1",
-    "user": "root",
-    "password": "1234",
+    "host": os.environ.get("MYSQLHOST") or os.environ.get("mysql.railway.internal", "127.0.0.1"),
+    "user": os.environ.get("MYSQLUSER") or os.environ.get("root", "root"),
+    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("BJVdNvpHFWkgKPdagcSUpGxGHbTCmPDk", "1234"),
+    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("3306", 3306)),
 }
+
+# Database name - configurable via environment variable
+# Railway uses MYSQLDATABASE, Render uses DB_NAME
+DB_NAME = os.environ.get("MYSQLDATABASE") or os.environ.get("DB_NAME", "mess_management")
 
 
 def get_connection(database=None):
@@ -29,13 +40,13 @@ def init_db():
         conn.autocommit(True)
         cur = conn.cursor()
         cur.execute(
-            "CREATE DATABASE IF NOT EXISTS mess_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            f"CREATE DATABASE IF NOT EXISTS {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
         )
         cur.close()
         conn.close()
 
         # Ensure users table exists
-        conn = get_connection("mess_management")
+        conn = get_connection(DB_NAME)
         conn.autocommit(True)
         cur = conn.cursor()
         
@@ -216,7 +227,7 @@ init_db()
 def force_update_db():
     """Force update database schema for existing installations"""
     try:
-        conn = get_connection("mess_management")
+        conn = get_connection(DB_NAME)
         conn.autocommit(True)
         cur = conn.cursor()
         
@@ -1371,7 +1382,10 @@ def cancellations():
     )
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
+if _name_ == "_main_":
+    # Get port from environment variable (Render provides this), default to 5000 for local
+    port = int(os.environ.get("PORT", 5000))
+    # Bind to 0.0.0.0 to accept connections from outside (required for Render)
+    # Use debug=False in production (Render sets environment appropriately)
+    debug = os.environ.get("FLASK_ENV") == "development"
+    app.run(host="0.0.0.0", port=port, debug=debug)
