@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
 import os
 
-app = Flask(_name_)
+app = Flask(__name__)
 # Use environment variable for SECRET_KEY, fallback to dev for local development
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev")
 
