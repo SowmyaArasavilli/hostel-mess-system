@@ -14,10 +14,10 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev")
 # Render uses DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME
 # Check Railway variables first, then generic, then local defaults
 DB_CONFIG = {
-    "host": os.environ.get("MYSQLHOST") or os.environ.get("mysql.railway.internal", "127.0.0.1"),
-    "user": os.environ.get("MYSQLUSER") or os.environ.get("root", "root"),
-    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("BJVdNvpHFWkgKPdagcSUpGxGHbTCmPDk", "1234"),
-    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("3306", 3306)),
+    "host": os.environ.get("MYSQLHOST") or os.environ.get("DB_HOST", "127.0.0.1"),
+    "user": os.environ.get("MYSQLUSER") or os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("DB_PASSWORD", "1234"),
+    "port": int(os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", 3306)),
 }
 
 # Database name - configurable via environment variable
@@ -1382,9 +1382,9 @@ def cancellations():
     )
 
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     # Get port from environment variable (Render provides this), default to 5000 for local
-    port = int(os.environ.get("PORT", 3306))
+    port = int(os.environ.get("PORT", 5000))
     # Bind to 0.0.0.0 to accept connections from outside (required for Render)
     # Use debug=False in production (Render sets environment appropriately)
     debug = os.environ.get("FLASK_ENV") == "development"
